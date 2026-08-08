@@ -36,13 +36,25 @@
     <div class="catalog-grid" id="catalog"></div>
     <div id="cart-container"></div>
     <script>
-        const tg = window.Telegram ? window.Telegram.WebApp : null;
-        if (tg) { 
+        // const tg = window.Telegram ? window.Telegram.WebApp : null;
+        // if (tg) { 
+        //     try {
+        //         tg.ready(); 
+        //         tg.expand(); 
+        //     } catch(e) { console.error(e); }
+        // }
+
+        const tg = window.TelegramWebApp || (window.Telegram && window.Telegram.WebApp) || null;
+        
+        if (tg) {
             try {
-                tg.ready(); 
-                tg.expand(); 
-            } catch(e) { console.error(e); }
+                tg.ready();
+                tg.expand();
+            } catch(e) {
+                console.error("Ошибка инициализации WebApp:", e);
+            }
         }
+
 
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('user_id') || '0';
