@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Acefast Каталог</title>
+    <script src="https://telegram.org"></script>
+    <style>
+        body { background-color: #ffffff; color: #000000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 16px; box-sizing: border-box; }
+        @media (prefers-color-scheme: dark) { body { background-color: #1c1c1e; color: #ffffff; } }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .title { font-size: 22px; font-weight: bold; margin: 0; }
+        .categories-container { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 14px; margin-bottom: 16px; white-space: nowrap; }
+        .categories-container::-webkit-scrollbar { display: none; }
+        .cat-btn { padding: 8px 16px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background-color: #f4f4f5; color: #000000; font-size: 13px; font-weight: 600; cursor: pointer; }
+        @media (prefers-color-scheme: dark) { .cat-btn { background-color: #2c2c2e; color: #ffffff; } }
+        .cat-btn.active { background-color: #2481cc; color: white; }
+        .catalog-grid { display: grid; grid-template-cols: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 30px; }
+        .card { background-color: #f4f4f5; padding: 12px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between; }
+        @media (prefers-color-scheme: dark) { .card { background-color: #2c2c2e; } }
+        .card img { width: 100%; height: 110px; border-radius: 12px; object-fit: cover; margin-bottom: 8px; }
+        .card-title { font-size: 13px; font-weight: 600; margin: 0 0 6px 0; line-height: 1.3; }
+        .price { color: #2481cc; font-weight: 700; font-size: 14px; }
+        .buy-btn { background-color: #2481cc; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; text-align: center; cursor: pointer; margin-top: 8px; }
+        .cart-section { border-top: 2px solid #2481cc; padding-top: 20px; margin-top: 20px; }
+        .checkout-btn { width: 100%; background-color: #34c759; color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 700; font-size: 16px; text-align: center; cursor: pointer; display: block; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="header"><h1 class="title">Каталог Acefast ⚡</h1></div>
+    <div class="categories-container" id="cats-menu"></div>
+    <div class="catalog-grid" id="catalog"></div>
+    <div id="cart-container"></div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready(); tg.expand();
+
+        // ПОЛУЧАЕМ ПАРАМЕТРЫ ССЫЛКИ
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('user_id') || '0';
+        
+        // ВНИМАНИЕ: Сюда пишем адрес вашего Python-бота, запущенного С ВПН (его публичный IP или адрес прокси)
+        // Для тестов, пока бот на ПК под ВПН, мы будем слать данные обратно через самого бота Telegram!
+        let products = [];
+        let cart = {};
+
+        const categories = {
+            cables: "Кабели", chargers: "Зарядные устройства", powerbanks: "Повербанки",
+            holders: "Держатели", audio: "Наушники", others: "Другое"
+        };
+        let currentCat = 'cables';
+
+        // Имитируем базу данных прямо на фронтенде для 100% автономности от туннелей!
+        // Перенесем массив сюда, чтобы вообще не дергать ваш ПК по сети во время открытия сайта
+        async function loadData() {
+            // Запрашиваем товары у бота в Telegram (без туннелей к вашему ПК!)
+            // Чтобы всё работало мгновенно, мы зашили каталог в JS
+            products = [
+                {"id":1,"name":"Кабель зарядки Acefast C1-01 (черный)","price":500,"category":"cables","image_url":"https://unsplash.com"},
+                {"id":2,"name":"Сетевое ЗУ Acefast A1 (черный)","price":450,"category":"chargers","image_url":"https://unsplash.com"},
+                {"id":3,"name":"Повербанк Acefast M1 (серый космос)","price":800,"category":"powerbanks","image_url":"https://unsplash.com"}
+                // Сюда можно дописать остальные товары
+            ];
+            renderMenu();
+            renderCatalog();
+        }
+
+        function renderMenu() {
+            const menu = document.getElementById('cats-menu');
+            menu.innerHTML = '';
+            Object.keys(categories).forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = `cat-btn ${currentCat === key ? 'active' : ''}`;
+                btn.innerText = categories[key];
+                btn.onclick = () => { currentCat = key; renderMenu(); renderCatalog(); };
+                menu.appendChild(btn);
+            });
+        }
+
+        function renderCatalog() {
+            const grid = document.getElementById('catalog');
+            grid.innerHTML = '';
+            const filtered = products.filter(p => p.category === currentCat);
+            filtered.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <img src="${p.image_url}">
+                    <h3 class="card-title">${p.name}</h3>
+                    <span class="price">${p.price} ₽</span>
+                    <button class="buy-btn" onclick="addToCart(${p.id})">В корзину</button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function addToCart(id) {
+            cart[id] = (cart[id] || 0) + 1;
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-container');
+            let total = 0;
+            let hasItems = false;
+            let html = `<div class="cart-section"><h2 class="title" style="font-size:18px;">Ваша корзина</h2>`;
+            
+            Object.keys(cart).forEach(id => {
+                const p = products.find(prod => prod.id == id);
+                if (p && cart[id] > 0) {
+                    hasItems = true;
+                    const cost = p.price * cart[id];
+                    total += cost;
+                    html += `<div style="display:flex;justify-content:between;padding:8px 0;">
+                        <div><strong>${p.name}</strong><br><span style="color:#8e8e93;">${p.price} ₽ x ${cart[id]}</span></div>
+                        <span style="font-weight:700;margin-left:auto;">${cost} ₽</span>
+                    </div>`;
+                }
+            });
+            html += `<div style="display:flex;justify-content:between;font-weight:bold;margin-top:15px;"><span>Итого:</span><span style="margin-left:auto;">${total} ₽</span></div>`;
+            html += `<button class="checkout-btn" onclick="sendOrder()">Оформить заказ</button></div>`;
+            
+            container.innerHTML = hasItems ? html : '';
+        }
+
+        // САМЫЙ КРАСИВЫЙ МОМЕНТ: Отправка заказа обратно боту БЕЗ использования вашего сервера ПК
+        function sendOrder() {
+            let orderItems = [];
+            let total = 0;
+            Object.keys(cart).forEach(id => {
+                const p = products.find(prod => prod.id == id);
+                if (p) {
+                    orderItems.push({ name: p.name, qty: cart[id] });
+                    total += p.price * cart[id];
+                }
+            });
+            
+            // Метод tg.sendData отправляет текстовую строку напрямую в чат вашего запущенного Python бота!
+            tg.sendData(JSON.stringify({ user_id: userId, items: orderItems, total: total }));
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
