@@ -6,24 +6,25 @@
     <title>Acefast Каталог</title>
     <script src="https://telegram.org"></script>
     <style>
-        body { background-color: #ffffff; color: #000000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 16px; box-sizing: border-box; }
+        body { background-color: #ffffff; color: #000000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 16px; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         @media (prefers-color-scheme: dark) { body { background-color: #1c1c1e; color: #ffffff; } }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .title { font-size: 22px; font-weight: bold; margin: 0; }
-        .categories-container { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 14px; margin-bottom: 16px; white-space: nowrap; }
+        .categories-container { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 14px; margin-bottom: 16px; white-space: nowrap; -webkit-overflow-scrolling: touch; }
         .categories-container::-webkit-scrollbar { display: none; }
         .cat-btn { padding: 8px 16px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background-color: #f4f4f5; color: #000000; font-size: 13px; font-weight: 600; cursor: pointer; }
-        @media (prefers-color-scheme: dark) { .cat-btn { background-color: #2c2c2e; color: #ffffff; } }
-        .cat-btn.active { background-color: #2481cc; color: white; }
+        @media (prefers-color-scheme: dark) { .cat-btn { background-color: #2c2c2e; color: #ffffff; border-color: rgba(255,255,255,0.1); } }
+        .cat-btn.active { background-color: #2481cc; color: white; border-color: #2481cc; }
         .catalog-grid { display: grid; grid-template-cols: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 30px; }
-        .card { background-color: #f4f4f5; padding: 12px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between; }
+        .card { background-color: #f4f4f5; padding: 12px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(0,0,0,0.05); }
         @media (prefers-color-scheme: dark) { .card { background-color: #2c2c2e; } }
         .card img { width: 100%; height: 110px; border-radius: 12px; object-fit: cover; margin-bottom: 8px; }
-        .card-title { font-size: 13px; font-weight: 600; margin: 0 0 6px 0; line-height: 1.3; }
+        .card-title { font-size: 13px; font-weight: 600; margin: 0 0 6px 0; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .price { color: #2481cc; font-weight: 700; font-size: 14px; }
         .buy-btn { background-color: #2481cc; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; text-align: center; cursor: pointer; margin-top: 8px; }
         .cart-section { border-top: 2px solid #2481cc; padding-top: 20px; margin-top: 20px; }
-        .checkout-btn { width: 100%; background-color: #34c759; color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 700; font-size: 16px; text-align: center; cursor: pointer; display: block; margin-top: 15px; }
+        .cart-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1); font-size: 13px; }
+        .checkout-btn { width: 100%; background-color: #34c759; color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 700; font-size: 16px; text-align: center; cursor: pointer; display: block; margin-top: 15px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -31,37 +32,153 @@
     <div class="categories-container" id="cats-menu"></div>
     <div class="catalog-grid" id="catalog"></div>
     <div id="cart-container"></div>
-
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready(); tg.expand();
 
-        // ПОЛУЧАЕМ ПАРАМЕТРЫ ССЫЛКИ
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('user_id') || '0';
         
-        // ВНИМАНИЕ: Сюда пишем адрес вашего Python-бота, запущенного С ВПН (его публичный IP или адрес прокси)
-        // Для тестов, пока бот на ПК под ВПН, мы будем слать данные обратно через самого бота Telegram!
-        let products = [];
         let cart = {};
-
         const categories = {
             cables: "Кабели", chargers: "Зарядные устройства", powerbanks: "Повербанки",
             holders: "Держатели", audio: "Наушники", others: "Другое"
         };
         let currentCat = 'cables';
 
-        // Имитируем базу данных прямо на фронтенде для 100% автономности от туннелей!
-        // Перенесем массив сюда, чтобы вообще не дергать ваш ПК по сети во время открытия сайта
-        async function loadData() {
-            // Запрашиваем товары у бота в Telegram (без туннелей к вашему ПК!)
-            // Чтобы всё работало мгновенно, мы зашили каталог в JS
-            products = [
-                {"id":1,"name":"Кабель зарядки Acefast C1-01 (черный)","price":500,"category":"cables","image_url":"https://unsplash.com"},
-                {"id":2,"name":"Сетевое ЗУ Acefast A1 (черный)","price":450,"category":"chargers","image_url":"https://unsplash.com"},
-                {"id":3,"name":"Повербанк Acefast M1 (серый космос)","price":800,"category":"powerbanks","image_url":"https://unsplash.com"}
-                // Сюда можно дописать остальные товары
-            ];
+        const products = [
+            {"id":1,"name":"Автомобильное ЗУ Acefast A1 (черный)","price":450,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":2,"name":"Сетевое ЗУ Acefast A3 (белый)","price":550,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":3,"name":"Сетевое ЗУ Acefast A5 (черный)","price":1200,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":4,"name":"Держатель/Стенд Acefast D1 (черный)","price":250,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":5,"name":"Аудио/Наушники Acefast D3 (черный)","price":950,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":6,"name":"Держатель/Стенд Acefast D5 (серый космос)","price":350,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":7,"name":"Аудио/Наушники Acefast W1 (белый)","price":850,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":8,"name":"Аудио/Наушники Acefast W3 (черный)","price":890,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":9,"name":"Повербанк Acefast M1 (серый космос)","price":800,"category":"powerbanks","image_url":"https://unsplash.com"},
+            {"id":10,"name":"Повербанк Acefast M5 (черный)","price":1350,"category":"powerbanks","image_url":"https://unsplash.com"},
+            {"id":11,"name":"Кабель зарядки Acefast C1-01 (черный)","price":500,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":12,"name":"Кабель зарядки Acefast C1-02 (черный)","price":450,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":13,"name":"Кабель зарядки Acefast C1-03 (черный)","price":350,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":14,"name":"Кабель зарядки Acefast C2-01 (белый)","price":400,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":15,"name":"Кабель зарядки Acefast C2-02 (черный)","price":660,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":16,"name":"Кабель зарядки Acefast C2-04 (черный)","price":210,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":17,"name":"Кабель зарядки Acefast C3-01 (белый)","price":480,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":18,"name":"Кабель зарядки Acefast C3-02 (черный)","price":510,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":19,"name":"Кабель зарядки Acefast C3-02W (белый)","price":510,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":20,"name":"Кабель зарядки Acefast C4-01 (черный)","price":290,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":21,"name":"Кабель зарядки Acefast C4-02 (красный)","price":180,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":22,"name":"Аудио/Наушники Acefast H10 (черный)","price":1500,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":23,"name":"Аудио/Наушники Acefast H11 (черный)","price":1950,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":24,"name":"Аудио/Наушники Acefast H12 (белый)","price":1950,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":25,"name":"Аудио/Наушники Acefast H13 (черный)","price":2400,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":26,"name":"Аудио/Наушники Acefast H14 (зеленый)","price":1100,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":27,"name":"Аудио/Наушники Acefast H15 (черный)","price":600,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":28,"name":"Аудио/Наушники Acefast H18 (черный)","price":2800,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":29,"name":"Повербанк Acefast M11 (белый)","price":1650,"category":"powerbanks","image_url":"https://unsplash.com"},
+            {"id":30,"name":"Повербанк Acefast M13 (серый космос)","price":1150,"category":"powerbanks","image_url":"https://unsplash.com"},
+            {"id":31,"name":"Повербанк Acefast M15 (черный)","price":1850,"category":"powerbanks","image_url":"https://unsplash.com"},
+            {"id":32,"name":"Аксессуар Acefast R3 (черный)","price":1400,"category":"others","image_url":"https://unsplash.com"},
+            {"id":33,"name":"Аксессуар Acefast R4 (черный)","price":1900,"category":"others","image_url":"https://unsplash.com"},
+            {"id":34,"name":"Автомобильное ЗУ Acefast A119 (черный)","price":990,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":35,"name":"Автомобильное ЗУ Acefast B20 (серебристый)","price":420,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":36,"name":"Держатель/Стенд Acefast D59 (черный)","price":480,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":37,"name":"Держатель/Стенд Acefast E11 (серый космос)","price":750,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":38,"name":"Держатель/Стенд Acefast E12 (розовый)","price":290,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":39,"name":"Аудио/Наушники Acefast K1 (черный)","price":1250,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":40,"name":"Аудио/Наушники Acefast K3 (черный)","price":3900,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":41,"name":"Повербанк Acefast M36 (черный)","price":1450,"category":"powerbanks","image_url":"https://unsplash.com"},
+            {"id":42,"name":"Аудио/Наушники Acefast L13 (белый)","price":690,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":43,"name":"Сетевое ЗУ Acefast E48 (черный)","price":2100,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":44,"name":"Сетевое ЗУ Acefast A115 (белый)","price":380,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":45,"name":"Сетевое ЗУ Acefast A112 (белый)","price":320,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":46,"name":"Сетевое ЗУ Acefast A106 (черный)","price":2990,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":47,"name":"Повербанк Acefast M30 (черный)","price":2800,"category":"powerbanks","image_url":"https://unsplash.com"},
+            {"id":48,"name":"Повербанк Acefast M28 (пурпурный)","price":790,"category":"powerbanks","image_url":"https://unsplash.com"},
+            {"id":49,"name":"Аудио/Наушники Acefast W7 (белый)","price":600,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":50,"name":"Сетевое ЗУ Acefast A90 (черный)","price":3400,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":51,"name":"Аудио/Наушники Acefast H9 (серебристый)","price":1750,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":52,"name":"Аудио/Наушники Acefast H16 (красный)","price":550,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":53,"name":"Держатель/Стенд Acefast D55 (серебристый)","price":190,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":54,"name":"Держатель/Стенд Acefast D69 (черный)","price":320,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":55,"name":"Аудио/Наушники Acefast K8 (синий)","price":850,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":56,"name":"Аксессуар Acefast S3 (белый)","price":390,"category":"others","image_url":"https://unsplash.com"},
+            {"id":57,"name":"Кабель зарядки Acefast C26 (черный)","price":240,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":58,"name":"Автомобильное ЗУ Acefast B17 (черный)","price":340,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":59,"name":"Автомобильное ЗУ Acefast B18 (черный)","price":490,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":60,"name":"Автомобильное ЗУ Acefast B21 (серый космос)","price":850,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":61,"name":"Держатель/Стенд Acefast E31 (черный)","price":690,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":62,"name":"Кабель зарядки Acefast C24 (черный)","price":320,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":63,"name":"Кабель зарядки Acefast C18 (синий)","price":150,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":64,"name":"Сетевое ЗУ Acefast A117 (пурпурный)","price":520,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":65,"name":"Аудио/Наушники Acefast W4 (розовый)","price":1150,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":66,"name":"Аксессуар Acefast J18 (серый космос)","price":650,"category":"others","image_url":"https://unsplash.com"},
+            {"id":67,"name":"Аудио/Наушники Acefast L3 (белый)","price":300,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":68,"name":"Держатель/Стенд Acefast E27 (серый космос)","price":320,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":69,"name":"Держатель/Стенд Acefast E22 (серый космос)","price":1000,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":70,"name":"Держатель/Стенд Acefast E30 (серый космос)","price":800,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":71,"name":"Сетевое ЗУ Acefast E39 (белый)","price":1700,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":72,"name":"Держатель/Стенд Acefast E28 (серый космос)","price":500,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":73,"name":"Аудио/Наушники Acefast H19 (черный)","price":1020,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":74,"name":"Держатель/Стенд Acefast D47 (черный)","price":500,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":75,"name":"Держатель/Стенд Acefast D46 (черный)","price":430,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":76,"name":"Держатель/Стенд Acefast D49 (черный)","price":500,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":77,"name":"Держатель/Стенд Acefast D67 (черный)","price":1250,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":78,"name":"Держатель/Стенд Acefast D33 (черный)","price":1050,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":79,"name":"Держатель/Стенд Acefast D3_2 (серебристый)","price":1050,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":80,"name":"Держатель/Стенд Acefast D56 (черный)","price":200,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":81,"name":"Держатель/Стенд Acefast D61 (серый космос)","price":1120,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":82,"name":"Держатель/Стенд Acefast D64 (черный)","price":500,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":83,"name":"Аудио/Наушники Acefast K12P (черный)","price":900,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":84,"name":"Аудио/Наушники Acefast K12A (черный)","price":650,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":85,"name":"Повербанк Acefast M24 (серый космос)","price":1250,"category":"powerbanks","image_url":"https://unsplash.com"},
+            {"id":86,"name":"Повербанк Acefast M29 (черный)","price":1000,"category":"powerbanks","image_url":"https://unsplash.com"},
+            {"id":87,"name":"Повербанк Acefast M31 (черный)","price":900,"category":"powerbanks","image_url":"https://unsplash.com"},
+            {"id":88,"name":"Автомобильное ЗУ Acefast B3 (черный)","price":750,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":89,"name":"Автомобильное ЗУ Acefast B9 (черный)","price":780,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":90,"name":"Сетевое ЗУ Acefast A13_W (белый)","price":1600,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":91,"name":"Сетевое ЗУ Acefast A13_B (черный)","price":1580,"category":"chargers","image_url":"https://unsplash.com"},
+            {"id":92,"name":"Кабель зарядки Acefast C1_01 (черный)","price":500,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":93,"name":"Кабель зарядки Acefast C1_02 (черный)","price":450,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":94,"name":"Кабель зарядки Acefast C2_02 (черный)","price":660,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":95,"name":"Кабель зарядки Acefast C2_04 (черный)","price":210,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":96,"name":"Кабель зарядки Acefast C3_01 (белый)","price":480,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":97,"name":"Кабель зарядки Acefast C3_02B (черный)","price":510,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":98,"name":"Кабель зарядки Acefast C3_02W (белый)","price":510,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":99,"name":"Кабель зарядки Acefast C8_03 (черный)","price":130,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":100,"name":"Кабель зарядки Acefast C8_04 (черный)","price":120,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":101,"name":"Кабель зарядки Acefast C12_04 (черный)","price":165,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":102,"name":"Кабель зарядки Acefast C13_05 (черный)","price":165,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":103,"name":"Кабель зарядки Acefast C14_03 (черный)","price":180,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":104,"name":"Кабель зарядки Acefast C14_04 (черный)","price":165,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":105,"name":"Кабель зарядки Acefast C15_04 (черный)","price":230,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":106,"name":"Кабель зарядки Acefast C17_04 (черный)","price":90,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":107,"name":"Кабель зарядки Acefast C17_03 (черный)","price":105,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":108,"name":"Кабель зарядки Acefast C19_04 (черный)","price":120,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":109,"name":"Кабель зарядки Acefast C20_03 (черный)","price":120,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":110,"name":"Кабель зарядки Acefast C20_04 (черный)","price":105,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":111,"name":"Кабель зарядки Acefast C20_01 (черный)","price":480,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":112,"name":"Кабель зарядки Acefast C21_04 (черный)","price":160,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":113,"name":"Кабель зарядки Acefast C22_03 (черный)","price":105,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":114,"name":"Кабель зарядки Acefast C22_04 (черный)","price":105,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":115,"name":"Кабель зарядки Acefast C23_03 (черный)","price":240,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":116,"name":"Аудио/Наушники Acefast L12 (черный)","price":480,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":117,"name":"Держатель/Стенд Acefast E43 (черный)","price":510,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":118,"name":"Держатель/Стенд Acefast D60 (черный)","price":630,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":119,"name":"Аудио/Наушники Acefast H8_S (серебристый)","price":990,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":120,"name":"Аудио/Наушники Acefast H8_G (золотой)","price":990,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":121,"name":"Аудио/Наушники Acefast H8_P (пурпурный)","price":990,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":122,"name":"Держатель/Стенд Acefast E6 (серый космос)","price":1800,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":123,"name":"Держатель/Стенд Acefast E10 (черный)","price":540,"category":"holders","image_url":"https://unsplash.com"},
+            {"id":124,"name":"Аудио/Наушники Acefast W7_2 (белый)","price":600,"category":"audio","image_url":"https://unsplash.com"},
+            {"id":125,"name":"Кабель зарядки Acefast C18_04 (белый)","price":90,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":126,"name":"Кабель зарядки Acefast C18_03 (белый)","price":90,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":127,"name":"Кабель зарядки Acefast C16_01 (черный)","price":135,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":128,"name":"Кабель зарядки Acefast C16_02 (черный)","price":120,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":129,"name":"Кабель зарядки Acefast C16_05 (черный)","price":165,"category":"cables","image_url":"https://unsplash.com"},
+            {"id":130,"name":"Кабель зарядки Acefast C16_04 (черный)","price":90,"category":"cables","image_url":"https://unsplash.com"}
+        ];
+        function loadData() {
             renderMenu();
             renderCatalog();
         }
@@ -82,14 +199,22 @@
             const grid = document.getElementById('catalog');
             grid.innerHTML = '';
             const filtered = products.filter(p => p.category === currentCat);
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = '<p style="grid-column: span 2; text-align: center; color: #8e8e93; padding: 20px 0;">В этой категории товаров пока нет</p>';
+                return;
+            }
+
             filtered.forEach(p => {
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
-                    <img src="${p.image_url}">
+                    <img src="${p.image_url}" onerror="this.src='https://placehold.co'">
                     <h3 class="card-title">${p.name}</h3>
-                    <span class="price">${p.price} ₽</span>
-                    <button class="buy-btn" onclick="addToCart(${p.id})">В корзину</button>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto;">
+                        <span class="price">${p.price} ₽</span>
+                        <button class="buy-btn" onclick="addToCart(${p.id})">Купить</button>
+                    </div>
                 `;
                 grid.appendChild(card);
             });
@@ -104,7 +229,7 @@
             const container = document.getElementById('cart-container');
             let total = 0;
             let hasItems = false;
-            let html = `<div class="cart-section"><h2 class="title" style="font-size:18px;">Ваша корзина</h2>`;
+            let html = `<div class="cart-section"><h2 class="title" style="font-size:18px; margin-bottom:15px;">Ваша корзина</h2>`;
             
             Object.keys(cart).forEach(id => {
                 const p = products.find(prod => prod.id == id);
@@ -112,31 +237,32 @@
                     hasItems = true;
                     const cost = p.price * cart[id];
                     total += cost;
-                    html += `<div style="display:flex;justify-content:between;padding:8px 0;">
+                    html += `<div class="cart-item">
                         <div><strong>${p.name}</strong><br><span style="color:#8e8e93;">${p.price} ₽ x ${cart[id]}</span></div>
-                        <span style="font-weight:700;margin-left:auto;">${cost} ₽</span>
+                        <span style="font-weight:700; margin-left:auto;">${cost} ₽</span>
                     </div>`;
                 }
             });
-            html += `<div style="display:flex;justify-content:between;font-weight:bold;margin-top:15px;"><span>Итого:</span><span style="margin-left:auto;">${total} ₽</span></div>`;
+            html += `<div style="display:flex; justify-content:space-between; font-weight:bold; margin-top:15px; font-size:16px;"><span>Итого:</span><span style="margin-left:auto;">${total} ₽</span></div>`;
             html += `<button class="checkout-btn" onclick="sendOrder()">Оформить заказ</button></div>`;
             
             container.innerHTML = hasItems ? html : '';
         }
 
-        // САМЫЙ КРАСИВЫЙ МОМЕНТ: Отправка заказа обратно боту БЕЗ использования вашего сервера ПК
         function sendOrder() {
             let orderItems = [];
             let total = 0;
             Object.keys(cart).forEach(id => {
                 const p = products.find(prod => prod.id == id);
-                if (p) {
+                if (p && cart[id] > 0) {
                     orderItems.push({ name: p.name, qty: cart[id] });
                     total += p.price * cart[id];
                 }
             });
             
-            // Метод tg.sendData отправляет текстовую строку напрямую в чат вашего запущенного Python бота!
+            if (orderItems.length === 0) return;
+            
+            // Отправляем массив данных в чат работающего Python-бота
             tg.sendData(JSON.stringify({ user_id: userId, items: orderItems, total: total }));
         }
 
@@ -144,3 +270,5 @@
     </script>
 </body>
 </html>
+
+
