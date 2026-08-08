@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Acefast Каталог</title>
-    <!-- Подключаем сохраненную вами библиотеку напрямую из репозитория -->
-    <script src="telegram-web-app.js"></script>
+    <script src="https://yastatic.net"></script>
     <style>
         body { background-color: #ffffff; color: #000000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 16px; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         @media (prefers-color-scheme: dark) { body { background-color: #1c1c1e; color: #ffffff; } }
@@ -17,12 +16,15 @@
         @media (prefers-color-scheme: dark) { .cat-btn { background-color: #2c2c2e; color: #ffffff; border-color: rgba(255,255,255,0.1); } }
         .cat-btn.active { background-color: #2481cc; color: white; border-color: #2481cc; }
         .catalog-grid { display: grid; grid-template-cols: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 30px; }
-        .card { background-color: #f4f4f5; padding: 12px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(0,0,0,0.05); }
+        .card { background-color: #f4f4f5; padding: 12px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(0,0,0,0.05); min-height: 180px; }
         @media (prefers-color-scheme: dark) { .card { background-color: #2c2c2e; } }
-        .card img { width: 100%; height: 110px; border-radius: 12px; object-fit: cover; margin-bottom: 8px; }
+        
+        .card-icon { width: 100%; height: 70px; background-color: rgba(36, 129, 204, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 8px; }
+        @media (prefers-color-scheme: dark) { .card-icon { background-color: rgba(255,255,255,0.05); } }
+        
         .card-title { font-size: 13px; font-weight: 600; margin: 0 0 6px 0; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .price { color: #2481cc; font-weight: 700; font-size: 14px; }
-        .buy-btn { background-color: #2481cc; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; text-align: center; cursor: pointer; margin-top: 8px; }
+        .buy-btn { background-color: #2481cc; color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; text-align: center; cursor: pointer; }
         .cart-section { border-top: 2px solid #2481cc; padding-top: 20px; margin-top: 20px; }
         .cart-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1); font-size: 13px; }
         .checkout-btn { width: 100%; background-color: #34c759; color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 700; font-size: 16px; text-align: center; cursor: pointer; display: block; margin-top: 15px; box-sizing: border-box; }
@@ -34,8 +36,13 @@
     <div class="catalog-grid" id="catalog"></div>
     <div id="cart-container"></div>
     <script>
-        const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
-        if (tg) { tg.ready(); tg.expand(); }
+        const tg = window.Telegram ? window.Telegram.WebApp : null;
+        if (tg) { 
+            try {
+                tg.ready(); 
+                tg.expand(); 
+            } catch(e) { console.error(e); }
+        }
 
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('user_id') || '0';
@@ -206,11 +213,14 @@
                 return;
             }
 
+            const icons = { cables: "🔌", chargers: "⚡", powerbanks: "🔋", holders: "📱", audio: "🎧", others: "📦" };
+            const currentIcon = icons[currentCat] || "📦";
+
             filtered.forEach(p => {
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
-                    <img src="${p.image_url}" onerror="this.src='https://placehold.co'">
+                    <div class="card-icon">${currentIcon}</div>
                     <h3 class="card-title">${p.name}</h3>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto;">
                         <span class="price">${p.price} ₽</span>
@@ -261,13 +271,17 @@
                 }
             });
             
-            if (orderItems.length === 0 || !tg) return;
+            if (orderItems.length === 0) return;
             
-            // Отправляем сформированный заказ в виде JSON строки напрямую в чат вашего Python-бота
-            tg.sendData(JSON.stringify({ user_id: userId, items: orderItems, total: total }));
+            if (tg) {
+                tg.sendData(JSON.stringify({ user_id: userId, items: orderItems, total: total }));
+            } else {
+                alert("Ошибка: Оформление заказа доступно только внутри Telegram-бота!");
+            }
         }
 
         loadData();
     </script>
 </body>
 </html>
+
