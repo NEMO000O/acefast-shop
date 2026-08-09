@@ -316,20 +316,22 @@
             
             if (orderItems.length === 0) return;
             
-            const botUsername = "Toys_Seller_bot";
-            const targetUrl = "https://t.me/" + botUsername + "?start=order_" + total;
-            
+            let text = "order_" + total + " [ ";
+            orderItems.forEach(item => {
+                text += `${item.name} x${item.qty}; `;
+            });
+            text += "]";
+
             if (window.Telegram && window.Telegram.WebApp) {
-                alert("🎉 Заказ сформирован! Перенаправляем в чат с ботом. Пожалуйста, нажмите кнопку СТАРТ внизу чата для подтверждения.");
+                alert("🎉 Заказ сформирован! Сейчас каталог закроется, выберите чат с вашим ботом и нажмите 'Отправить', чтобы завершить покупку.");
                 
-                window.Telegram.WebApp.openLink(targetUrl, { try_instant_view: false });
+                window.Telegram.WebApp.switchInlineQuery(text);
                 
                 window.Telegram.WebApp.close();
             } else {
-                window.location.href = targetUrl;
+                alert("Текст заказа для копирования:\n\n" + text);
             }
         }
-
 
         loadData();
     </script>
