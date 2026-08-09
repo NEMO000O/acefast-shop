@@ -316,26 +316,22 @@
             
             if (orderItems.length === 0) return;
             
-            const botApiUrl = "https://lucas-dairy-ireland-penetration.trycloudflare.com";
-
-            fetch(botApiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId, items: orderItems, total: total })
-            })
-            .then(response => {
-                if (response.ok) {
-                    alert("🎉 Заказ успешно оформлен! Окно можно закрывать.");
-                    if(window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.close();
-                } else {
-                    alert("Ошибка отправки заказа на сервер.");
-                }
-            })
-            .catch(error => {
-                alert("Ошибка сети: Проверьте, запущен ли Python-бот на ПК!");
+            let text = `Заказ от пользователя ID ${userId}:\n`;
+            orderItems.forEach(item => {
+                text += `▪️ ${item.name} — ${item.qty} шт.\n`;
             });
-        }
+            text += `\nИтого к оплате: ${total} ₽`;
 
+            const encodedText = encodeURIComponent(text);
+            
+            const botUsername = "Toys_Seller_bot";
+
+            const tgLink = `https://t.me{botUsername}?start=${userId}`;
+            
+            alert("🎉 Заказ сформирован! Сейчас вы будете перенаправлены в чат с ботом. Пожалуйста, нажмите кнопку СТАРТ или ОТПРАВИТЬ в чате, чтобы завершить оформление.");
+            
+            window.location.href = `https://t.me{botUsername}?start=order_${total}`;
+        }
 
         loadData();
     </script>
