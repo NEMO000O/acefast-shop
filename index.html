@@ -303,7 +303,7 @@
         //     }
         // }
 // ____________________________________________________2
-        function sendOrder() {
+                        function sendOrder() {
             let orderItems = [];
             let total = 0;
             Object.keys(cart).forEach(id => {
@@ -316,21 +316,27 @@
             
             if (orderItems.length === 0) return;
             
-            let text = "order_" + total + " [ ";
-            orderItems.forEach(item => {
-                text += `${item.name} x${item.qty}; `;
-            });
-            text += "]";
-
-            if (window.Telegram && window.Telegram.WebApp) {
-                alert("🎉 Заказ сформирован! Сейчас каталог закроется, выберите чат с вашим ботом и нажмите 'Отправить', чтобы завершить покупку.");
-                
-                window.Telegram.WebApp.switchInlineQuery(text);
-                
-                window.Telegram.WebApp.close();
-            } else {
-                alert("Текст заказа для копирования:\n\n" + text);
-            }
+            const botUsername = "Toys_Seller_bot";
+            
+            const startParam = "order_" + total + "_" + userId;
+            const targetUrl = "https://t.me/" + botUsername + "?start=" + startParam;
+            
+            const container = document.getElementById('cart-container');
+            container.innerHTML = `
+                <div class="cart-section" style="text-align: center; background-color: rgba(52, 199, 89, 0.1); border-color: #34c759; border-radius: 16px; padding: 20px;">
+                    <h2 class="title" style="color: #34c759; font-size: 20px; margin-bottom: 10px;">🎉 Заказ сформирован!</h2>
+                    <p style="font-size: 14px; margin-bottom: 20px; color: #8e8e93;">
+                        Сумма к оплате: <strong>${total} ₽</strong>.<br>
+                        Для подтверждения и отправки заказа менеджеру нажмите на кнопку ниже:
+                    </p>
+                    <!-- Обычная, стандартная HTML-ссылка. Telegram НЕ ИМЕЕТ ПРАВА её заблокировать! -->
+                    <a href="${targetUrl}" target="_blank" class="checkout-btn" style="background-color: #2481cc; margin-top: 0;">
+                        ПОДТВЕРДИТЬ В ЧАТЕ БОТА
+                    </a>
+                </div>
+            `;
+            
+            cart = {};
         }
 
         loadData();
