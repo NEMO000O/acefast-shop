@@ -24,12 +24,14 @@ window.Telegram.WebApp = (function() {
         parentWindow.postMessage(JSON.stringify({event: "web_app_data", data: data}), "*");
     };
     
-    // ИСПРАВЛЕНО: Добавляем официально поддерживаемый метод переходов, которого не было в урезанном файле!
-    WebApp.openTelegramLink = function(url) {
-        parentWindow.postMessage(JSON.stringify({event: "web_app_open_tg_link", url: url}), "*");
-    };
+    // ИСПРАВЛЕНО: Официальный метод открытия внешних ссылок и ссылок t.me
     WebApp.openLink = function(url, options) {
         parentWindow.postMessage(JSON.stringify({event: "web_app_open_link", url: url, options: options}), "*");
+    };
+
+    // ИСПРАВЛЕНО: Официальный метод перенаправления текста в чаты (Inline Query)
+    WebApp.switchInlineQuery = function(query, choose_chat_types) {
+        parentWindow.postMessage(JSON.stringify({event: "web_app_switch_inline_query", query: query, choose_chat_types: choose_chat_types}), "*");
     };
 
     return WebApp;
