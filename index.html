@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Acefast Каталог</title>
-    <script src="https://yastatic.net"></script>
+    <!-- <script src="https://yastatic.net"></script> -->
+    <script src="/acefast-shop/telegram-web-app.js"></script>
     <style>
         body { background-color: #ffffff; color: #000000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 16px; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         @media (prefers-color-scheme: dark) { body { background-color: #1c1c1e; color: #ffffff; } }
@@ -43,15 +44,25 @@
         //         tg.expand(); 
         //     } catch(e) { console.error(e); }
         // }
-
-        const tg = window.TelegramWebApp || (window.Telegram && window.Telegram.WebApp) || null;
+// _______________________________________________2
+        // const tg = window.TelegramWebApp || (window.Telegram && window.Telegram.WebApp) || null;
         
+        // if (tg) {
+        //     try {
+        //         tg.ready();
+        //         tg.expand();
+        //     } catch(e) {
+        //         console.error("Ошибка инициализации WebApp:", e);
+        //     }
+        // }
+// _______________________________________________3
+        var tg = window.Telegram.WebApp;
         if (tg) {
             try {
                 tg.ready();
                 tg.expand();
             } catch(e) {
-                console.error("Ошибка инициализации WebApp:", e);
+                console.error("Ошибка готовности WebApp:", e);
             }
         }
 
