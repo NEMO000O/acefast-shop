@@ -317,16 +317,15 @@
             if (orderItems.length === 0) return;
             
             const botUsername = "Toys_Seller_bot";
-
             const targetUrl = "https://t.me/" + botUsername + "?start=order_" + total;
             
-            if (window.Telegram && window.Telegram.WebApp) {
+            if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openTelegramLink === "function") {
+                alert("🎉 Заказ сформирован! Перенаправляем в чат с ботом.");
                 window.Telegram.WebApp.openTelegramLink(targetUrl);
             } else {
                 window.location.href = targetUrl;
             }
         }
-
 
         loadData();
     </script>
