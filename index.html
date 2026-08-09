@@ -319,13 +319,17 @@
             const botUsername = "Toys_Seller_bot";
             const targetUrl = "https://t.me/" + botUsername + "?start=order_" + total;
             
-            if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openTelegramLink === "function") {
-                alert("🎉 Заказ сформирован! Перенаправляем в чат с ботом.");
-                window.Telegram.WebApp.openTelegramLink(targetUrl);
+            if (window.Telegram && window.Telegram.WebApp) {
+                alert("🎉 Заказ сформирован! Перенаправляем в чат с ботом. Пожалуйста, нажмите кнопку СТАРТ внизу чата для подтверждения.");
+                
+                window.Telegram.WebApp.openLink(targetUrl, { try_instant_view: false });
+                
+                window.Telegram.WebApp.close();
             } else {
                 window.location.href = targetUrl;
             }
         }
+
 
         loadData();
     </script>
