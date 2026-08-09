@@ -23,10 +23,15 @@ window.Telegram.WebApp = (function() {
     WebApp.sendData = function(data) {
         parentWindow.postMessage(JSON.stringify({event: "web_app_data", data: data}), "*");
     };
-
-    window.addEventListener("message", function(event) {
-        // Служебные события Telegram
-    });
+    
+    // ИСПРАВЛЕНО: Добавляем официально поддерживаемый метод переходов, которого не было в урезанном файле!
+    WebApp.openTelegramLink = function(url) {
+        parentWindow.postMessage(JSON.stringify({event: "web_app_open_tg_link", url: url}), "*");
+    };
+    WebApp.openLink = function(url, options) {
+        parentWindow.postMessage(JSON.stringify({event: "web_app_open_link", url: url, options: options}), "*");
+    };
 
     return WebApp;
 })();
+window.TelegramWebApp = window.Telegram.WebApp;
