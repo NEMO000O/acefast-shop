@@ -283,6 +283,26 @@
             container.innerHTML = hasItems ? html : '';
         }
 
+        // function sendOrder() {
+        //     let orderItems = [];
+        //     let total = 0;
+        //     Object.keys(cart).forEach(id => {
+        //         const p = products.find(prod => prod.id == id);
+        //         if (p && cart[id] > 0) {
+        //             orderItems.push({ name: p.name, qty: cart[id] });
+        //             total += p.price * cart[id];
+        //         }
+        //     });
+            
+        //     if (orderItems.length === 0) return;
+            
+        //     if (tg) {
+        //         tg.sendData(JSON.stringify({ user_id: userId, items: orderItems, total: total }));
+        //     } else {
+        //         alert("Ошибка: Оформление заказа доступно только внутри Telegram-бота!");
+        //     }
+        // }
+// ____________________________________________________2
         function sendOrder() {
             let orderItems = [];
             let total = 0;
@@ -296,12 +316,26 @@
             
             if (orderItems.length === 0) return;
             
-            if (tg) {
-                tg.sendData(JSON.stringify({ user_id: userId, items: orderItems, total: total }));
-            } else {
-                alert("Ошибка: Оформление заказа доступно только внутри Telegram-бота!");
-            }
+            const botApiUrl = "https://lucas-dairy-ireland-penetration.trycloudflare.com";
+
+            fetch(botApiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, items: orderItems, total: total })
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("🎉 Заказ успешно оформлен! Окно можно закрывать.");
+                    if(window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.close();
+                } else {
+                    alert("Ошибка отправки заказа на сервер.");
+                }
+            })
+            .catch(error => {
+                alert("Ошибка сети: Проверьте, запущен ли Python-бот на ПК!");
+            });
         }
+
 
         loadData();
     </script>
