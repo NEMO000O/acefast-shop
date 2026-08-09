@@ -316,22 +316,17 @@
             
             if (orderItems.length === 0) return;
             
-            let text = `Заказ от пользователя ID ${userId}:\n`;
-            orderItems.forEach(item => {
-                text += `▪️ ${item.name} — ${item.qty} шт.\n`;
-            });
-            text += `\nИтого к оплате: ${total} ₽`;
-
-            const encodedText = encodeURIComponent(text);
-            
             const botUsername = "Toys_Seller_bot";
 
-            const tgLink = `https://t.me/${botUsername}?start=${userId}`;
+            const targetUrl = "https://t.me/" + botUsername + "?start=order_" + total;
             
-            alert("🎉 Заказ сформирован! Сейчас вы будете перенаправлены в чат с ботом. Пожалуйста, нажмите кнопку СТАРТ или ОТПРАВИТЬ в чате, чтобы завершить оформление.");
-            
-            window.location.href = `https://t.me/${botUsername}?start=order_${total}`;
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.openTelegramLink(targetUrl);
+            } else {
+                window.location.href = targetUrl;
+            }
         }
+
 
         loadData();
     </script>
