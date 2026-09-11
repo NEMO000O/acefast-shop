@@ -272,7 +272,7 @@
             // ВНИМАНИЕ: Обязательно укажите точный юзернейм вашего бота БЕЗ знака @
             const botUsername = "ИМЯ_ВАШЕГО_БОТА";
             
-            const orderPayload = compressedParts.join("_");
+            const orderPayload = compressedParts.join("-");
             const targetUrl = "https://t.me" + botUsername + "?start=" + orderPayload;
             
             const container = document.getElementById('cart-container');
