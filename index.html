@@ -321,7 +321,7 @@
 
             // Исходная структура аргументов, которая у вас работала: order_[ДАННЫЕ]_[USER_ID]
             const startParam = "order_" + orderPayload + "_" + userId;
-            const targetUrl = "https://t.me" + botUsername + "?start=" + startParam;
+            const targetUrl = "https://t.me/" + botUsername + "?start=" + startParam;
 
             const container = document.getElementById('cart-container');
             container.innerHTML = `
