@@ -259,6 +259,7 @@
 
         function sendOrder() {
             let total = 0;
+            let itemsText = "";
             let hasItems = false;
             
             Object.keys(cart).forEach(id => {
@@ -266,26 +267,56 @@
                     hasItems = true;
                     const p = products.find(prod => prod.id == id);
                     if (p) {
-                        total += p.price * cart[id];
+                        const cost = p.price * cart[id];
+                        total += cost;
+                        // Сразу собираем красивый список товаров текстом
+                        itemsText += `▪️ ${p.name} — ${cart[id]} шт. (${cost} ₽)\n`;
                     }
                 }
             });
             
             if (!hasItems || total === 0) return;
             
-            // Проверяем доступность официального API Telegram
-            if (window.Telegram && window.Telegram.WebApp) {
-                alert("🎉 Заказ на сумму " + total + " ₽ сформирован и отправлен в чат бота!");
-                
-                // ОТПРАВЛЯЕМ ТОЛЬКО СУММУ: Точно так же, как у вас отлично работало раньше!
-                window.Telegram.WebApp.sendData(total.toString());
-                
-                // Принудительно закрываем окно каталога
-                window.Telegram.WebApp.close();
-            } else {
-                alert("Ошибка: Запуск вне Telegram. Сумма заказа: " + total + " ₽");
-            }
+            // КРИТИЧЕСКИ ВАЖНО: Вставьте сюда точный ТОКЕН вашего бота
+            const botToken = "СЮДА_ВСТАВЬТЕ_ТОКЕН_ВАШЕГО_БОТА";
+            // КРИТИЧЕСКИ ВАЖНО: Вставьте ваш числовой ID (куда слать уведомления)
+            const adminId = "5921462348";
+
+            // Строим красивый HTML-текст чека, который прилетит вам в чат
+            const messageText = `🔔 <b>Поступил новый заказ Acefast!</b>\n\n` +
+                                `🆔 <b>ID покупателя:</b> <code>${userId}</code>\n\n` +
+                                `📦 <b>Состав заказа:</b>\n${itemsText}\n` +
+                                `💰 <b>Итого к оплате:</b> <b>${total} ₽</b>`;
+
+            // Официальный прямой URL-запрос к серверам Telegram для отправки сообщения
+            const telegramApiUrl = `https://telegram.org{botToken}/sendMessage`;
+
+            // Сайт сам отправляет заказ напрямую в Telegram, минуя ваш компьютер!
+            fetch(telegramApiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: adminId,
+                    text: messageText,
+                    parse_mode: 'HTML'
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert(`🎉 Заказ на сумму ${total} ₽ успешно оформлен! Менеджер свяжется с вами.`);
+                    // Закрываем окно каталога
+                    if (window.Telegram && window.Telegram.WebApp) {
+                        window.Telegram.WebApp.close();
+                    }
+                } else {
+                    alert("Ошибка отправки заказа. Проверьте токен бота в коде GitHub.");
+                }
+            })
+            .catch(error => {
+                alert("Ошибка сети. Попробуйте еще раз.");
+            });
         }
+
 
 
         loadData();
