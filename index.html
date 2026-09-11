@@ -258,34 +258,32 @@
         }
 
         function sendOrder() {
-            let total = 0; 
-            let compressedParts = [];
+            let total = 0;
+            let hasItems = false;
             
             Object.keys(cart).forEach(id => {
                 if (cart[id] > 0) {
+                    hasItems = true;
                     const p = products.find(prod => prod.id == id);
-                    if (p) total += p.price * cart[id];
-                    // Собираем простой массив "i1q2", "i15q1"
-                    compressedParts.push("i" + id + "q" + cart[id]);
+                    if (p) {
+                        total += p.price * cart[id];
+                    }
                 }
             });
             
-            if (compressedParts.length === 0) return;
-            
-            // Склеиваем заказ через дефис в одну компактную строку, например: "order-i1q2-i15q1"
-            const orderPayload = "order-" + compressedParts.join("-");
+            if (!hasItems || total === 0) return;
             
             // Проверяем доступность официального API Telegram
             if (window.Telegram && window.Telegram.WebApp) {
-                alert("🎉 Заказ сформирован и отправлен в чат бота!");
+                alert("🎉 Заказ на сумму " + total + " ₽ сформирован и отправлен в чат бота!");
                 
-                // Легальный метод: отправляет строку напрямую в чат вашего запущенного Python-бота
-                window.Telegram.WebApp.sendData(orderPayload);
+                // ОТПРАВЛЯЕМ ТОЛЬКО СУММУ: Точно так же, как у вас отлично работало раньше!
+                window.Telegram.WebApp.sendData(total.toString());
                 
-                // Принудительно закрываем окно каталога, возвращая пользователя в чат
+                // Принудительно закрываем окно каталога
                 window.Telegram.WebApp.close();
             } else {
-                alert("Ошибка: Запуск вне Telegram. Ваш заказ: " + orderPayload);
+                alert("Ошибка: Запуск вне Telegram. Сумма заказа: " + total + " ₽");
             }
         }
 
