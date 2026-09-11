@@ -258,33 +258,37 @@
         }
 
         function sendOrder() {
-            let total = 0; let compressedParts = [];
+            let total = 0; 
+            let compressedParts = [];
+            
             Object.keys(cart).forEach(id => {
                 if (cart[id] > 0) {
                     const p = products.find(prod => prod.id == id);
                     if (p) total += p.price * cart[id];
+                    // Собираем простой массив "i1q2", "i15q1"
                     compressedParts.push("i" + id + "q" + cart[id]);
                 }
             });
             
             if (compressedParts.length === 0) return;
             
-            // ВНИМАНИЕ: Обязательно укажите точный юзернейм вашего бота БЕЗ знака @
-            const botUsername = "ИМЯ_ВАШЕГО_БОТА";
+            // Склеиваем заказ через дефис в одну компактную строку, например: "order-i1q2-i15q1"
+            const orderPayload = "order-" + compressedParts.join("-");
             
-            const orderPayload = compressedParts.join("-");
-            const targetUrl = "https://t.me" + botUsername + "?start=" + orderPayload;
-            
-            const container = document.getElementById('cart-container');
-            container.innerHTML = `
-                <div class="cart-section" style="text-align: center; background-color: rgba(52, 199, 89, 0.1); border-color: #34c759; border-radius: 16px; padding: 20px;">
-                    <h2 class="title" style="color: #34c759; font-size: 20px; margin-bottom: 10px;">🎉 Заказ сформирован!</h2>
-                    <p style="font-size: 14px; margin-bottom: 20px; color: #8e8e93;">Сумма к оплате: <strong>${total} ₽</strong>.</p>
-                    <a href="${targetUrl}" target="_blank" class="checkout-btn" style="background-color: #2481cc; margin-top: 0;">ПОДТВЕРДИТЬ В ЧАТЕ БОТА</a>
-                </div>
-            `;
-            cart = {}; renderCatalog();
+            // Проверяем доступность официального API Telegram
+            if (window.Telegram && window.Telegram.WebApp) {
+                alert("🎉 Заказ сформирован и отправлен в чат бота!");
+                
+                // Легальный метод: отправляет строку напрямую в чат вашего запущенного Python-бота
+                window.Telegram.WebApp.sendData(orderPayload);
+                
+                // Принудительно закрываем окно каталога, возвращая пользователя в чат
+                window.Telegram.WebApp.close();
+            } else {
+                alert("Ошибка: Запуск вне Telegram. Ваш заказ: " + orderPayload);
+            }
         }
+
 
         loadData();
     </script>
